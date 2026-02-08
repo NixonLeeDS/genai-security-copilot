@@ -1,14 +1,22 @@
-from validator import validate_input
-from llm import call_llm
+from fastapi import FastAPI, HTTPException
+from app.validator import validate_input
+from app.llm import call_llm
 
-def analyze(input_type: str, content: str) -> str:
-    validate_input(input_type, content)
+app = FastAPI()
 
-    with open("prompts/security_prompt.txt") as f:
-        prompt = f.read()
+@app.post("/analyze")
+def analyze(payload: dict):
+    try:
+        input_type = payload.get("input_type")
+        content = payload.get("content")
 
-    return call_llm(prompt, content)
+        validate_input(input_type, content)
 
-if __name__ == "__main__":
-    result = analyze("iam_policy", "Policy allows full access to all resources")
-    print(result)
+        with open("prompts/security_prompt.txt") as f:
+            prompt = f.read()
+
+        result = call_llm(prompt, content)
+        return {"result": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
