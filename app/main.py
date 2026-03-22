@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from app.validator import validate_input
 from app.llm import call_llm
-from app.models import AnalyzeRequest
+from app.models import AnalyzeRequest, RecommendRequest, RecommendResponse, Recommendation
+from app.recommender import generate_iam_recommendations
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,5 +41,18 @@ def analyze(payload: AnalyzeRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Unexpected error during analysis: %s", str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.post("/recommendations", response_model=RecommendResponse)
+def recommendations(payload: RecommendRequest):
+    logger.info("Recommendations request received")
+    try:
+        raw = generate_iam_recommendations(payload.policy)
+        items = [Recommendation(**r) for r in raw]
+        logger.info("Generated %d recommendations", len(items))
+        return RecommendResponse(recommendations=items)
+    except Exception as e:
+        logger.error("Error generating recommendations: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
