@@ -37,7 +37,7 @@ def analyze(payload: AnalyzeRequest):
         with open("prompts/security_prompt.txt") as f:
             prompt = f.read()
 
-        result = call_llm(prompt, payload.content)
+        result = call_llm(prompt, payload.content, input_type=payload.input_type)
         logger.info("Analysis complete: input_type=%s", payload.input_type)
         return {"result": result}
 
