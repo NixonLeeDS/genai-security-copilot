@@ -132,9 +132,22 @@ This analysis is advisory only and is based solely on the provided input.
 """
 
 
+import logging
+
+from app.config import USE_MOCK
+
+logger = logging.getLogger(__name__)
+
+
 def call_llm(prompt: str, user_input: str, input_type: str = "") -> str:
     """
-    Mock LLM response for local development.
-    Returns input-type-aware responses to simulate a GenAI model (e.g. Amazon Bedrock).
+    Route to Amazon Bedrock or return a mock response based on the USE_MOCK setting.
+    Set USE_MOCK=false in the environment to enable live Bedrock calls.
     """
-    return _MOCK_RESPONSES.get(input_type, _DEFAULT_RESPONSE)
+    if USE_MOCK:
+        logger.debug("USE_MOCK=true, returning mock response for input_type=%s", input_type)
+        return _MOCK_RESPONSES.get(input_type, _DEFAULT_RESPONSE)
+
+    from app.bedrock import invoke_bedrock
+    logger.info("Routing to Bedrock for input_type=%s", input_type)
+    return invoke_bedrock(prompt, user_input)
